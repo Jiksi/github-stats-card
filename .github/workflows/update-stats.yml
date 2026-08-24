@@ -38,12 +38,12 @@ jobs:
 
       - name: Commit updated statistics
         run: |
-          if git diff --quiet -- dist data; then
+          git add dist data
+          if git diff --cached --quiet; then
             echo "Statistics are already up to date."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist data
           git commit -m "chore: update GitHub stats"
           git push
