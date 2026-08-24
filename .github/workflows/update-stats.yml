@@ -1,0 +1,49 @@
+name: Update GitHub stats card
+
+on:
+  schedule:
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - config.json
+      - scripts/**
+      - .github/workflows/update-stats.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-github-stats
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate card
+        run: npm run generate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit updated statistics
+        run: |
+          if git diff --quiet -- dist data; then
+            echo "Statistics are already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist data
+          git commit -m "chore: update GitHub stats"
+          git push
