@@ -6,10 +6,6 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - config.json
-      - scripts/**
-      - .github/workflows/update-stats.yml
 
 permissions:
   contents: write
@@ -26,24 +22,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Fetch github-stats
+        run: curl -sSf -o github-stats.svg "https://github-stats-extended.vercel.app/api?username=Jiksi&show_icons=true&theme=github_dark&hide_border=true&rank_icon=github"
 
-      - name: Generate card
-        run: npm run generate
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch top-langs
+        run: curl -sSf -o top-langs.svg "https://github-stats-extended.vercel.app/api?username=Jiksi&show_icons=true&theme=github_dark&hide_border=true&rank_icon=github"
 
-      - name: Commit updated statistics
+      - name: Fetch streak-stats
+        run: curl -sSf -o streak-stats.svg "https://streak-stats.demolab.com?user=Jiksi&theme=github-dark-blue&hide_border=true"
+
+      - name: Commit if changed
         run: |
-          git add dist data
-          if git diff --cached --quiet; then
-            echo "Statistics are already up to date."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: update GitHub stats"
-          git push
+          git add github-stats.svg top-langs.svg streak-stats.svg
+          if git diff --staged --quiet; then
+            echo "no changes"
+          else
+            git commit -m "chore: update GitHub stats"
+            git push
+          fi
